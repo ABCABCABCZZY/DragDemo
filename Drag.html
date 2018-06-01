@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="//vuejs.org/js/vue.min.js"></script>
+    <!-- CDNJS :: Sortable (https://cdnjs.com/) -->
+    <script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
+    <!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
+    <script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.16.0/vuedraggable.min.js"></script>
+</head>
+
+
+<style>
+    .box {
+        width: 1000px;
+        height: 500px;
+        background: antiquewhite;
+    }
+
+    .column {
+        width: 1000px;
+        height: 200px;
+        background: aqua;
+        margin-top: 40px;
+    }
+
+    .card {
+        width: 200px;
+        height: 200px;
+        float: left;
+        margin-left: 20px;
+        background: rebeccapurple;
+        font-size: 30px;
+        color: white;
+        text-align: center;
+    }
+    .ghostClass {
+        opacity: 1;
+    }
+</style>
+
+
+<div id="app">
+
+    <div class="box">
+
+        <draggable
+                v-model="card"
+                :options='{disabled:false,animation:200,ghostClass:"ghostClass",group: "name"}'
+                @end="onEndCallback"
+                @update='onUpdateCallback'
+                @start="onStartCallback"
+                @add="onAddCallback"
+                @choose="onChooseCallback"
+                @filter="onFilterCallback"
+                @clone="onCloneCallback"
+                @scrollFn="scrollFn"
+                :move='onMoveCallback'
+        >
+
+            <div v-for="element in card" :key="element.type" class="card">{{element.type}}</div>
+        </draggable>
+
+    </div>
+
+
+    <div class="column">
+        <draggable :options='{group: "name"}'>
+            <div v-for="element in column" class="card">{{element.type}}</div>
+        </draggable>
+    </div>
+
+</div>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                //牌区
+                card: [
+                    {
+                        type: 1,
+                        img: ''
+                    },
+                    {
+                        type: 2,
+                        img: ''
+                    },
+                    {
+                        type: 3,
+                        img: ''
+                    }
+                ],
+                //每个列区
+                column: [
+                    {
+                        type: 3,
+                        img: ''
+                    }
+                ]
+            }
+        },
+        methods: {
+            onMoveCallback(ent, originalEvent) {
+                console.log('在方块之间拖动', ent, originalEvent);
+            },
+            onUpdateCallback(ent, originalEvent) {
+                console.log('更换位置', ent, originalEvent);
+            },
+            onStartCallback(ent, originalEvent) {
+                console.log('开始拖动', ent, originalEvent);
+            },
+            onEndCallback(ent, originalEvent) {
+                console.log('拖动松手', ent, originalEvent);
+            },
+            onAddCallback() {
+                console.log('add回调');
+            },
+            onChooseCallback(ent, originalEvent) {
+                console.log('选中方块', ent, originalEvent);
+            },
+            onFilterCallback(ent, originalEvent) {
+                console.log('过滤器', ent, originalEvent);
+            },
+            onCloneCallback(ent, originalEvent) {
+                console.log('拷贝时', ent, originalEvent);
+            },
+            scrollFn() {
+                console.log('123123')
+            }
+        }
+    });
+</script>
