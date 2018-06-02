@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Title</title>
-    <script src="//vuejs.org/js/vue.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/vue/2.5.2/vue.min.js"></script>
     <!-- CDNJS :: Sortable (https://cdnjs.com/) -->
     <script src="//cdn.jsdelivr.net/npm/sortablejs@1.7.0/Sortable.min.js"></script>
     <!-- CDNJS :: Vue.Draggable (https://cdnjs.com/) -->
@@ -20,7 +20,7 @@
 
     .column {
         width: 1000px;
-        height: 200px;
+        height: 300px;
         background: aqua;
         margin-top: 40px;
     }
@@ -35,8 +35,14 @@
         color: white;
         text-align: center;
     }
+
     .ghostClass {
         opacity: 1;
+    }
+
+    .handle {
+        cursor: move;
+        cursor: -webkit-grabbing;
     }
 </style>
 
@@ -47,7 +53,7 @@
 
         <draggable
                 v-model="card"
-                :options='{disabled:false,animation:200,ghostClass:"ghostClass",group: "name"}'
+                :options='{disabled:false,animation:200,ghostClass:"ghostClass",group:{ name: "card",put: true,pull:true}}'
                 @end="onEndCallback"
                 @update='onUpdateCallback'
                 @start="onStartCallback"
@@ -66,7 +72,7 @@
 
 
     <div class="column">
-        <draggable :options='{group: "name"}'>
+        <draggable :options='{group:{ name: "column", put:["card"]}}' v-model="column">
             <div v-for="element in column" class="card">{{element.type}}</div>
         </draggable>
     </div>
@@ -127,8 +133,8 @@
             onCloneCallback(ent, originalEvent) {
                 console.log('拷贝时', ent, originalEvent);
             },
-            scrollFn() {
-                console.log('123123')
+            scrollFn(e) {
+                console.log(e)
             }
         }
     });
