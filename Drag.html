@@ -20,7 +20,7 @@
 
     .column {
         width: 1000px;
-        height: 300px;
+        min-height: 500px;
         background: aqua;
         margin-top: 40px;
     }
@@ -30,6 +30,7 @@
         height: 200px;
         float: left;
         margin-left: 20px;
+        margin-top: 10px;
         background: rebeccapurple;
         font-size: 30px;
         color: white;
@@ -53,27 +54,31 @@
 
         <draggable
                 v-model="card"
-                :options='{disabled:false,animation:200,ghostClass:"ghostClass",group:{ name: "card",put: true,pull:true}}'
-                @end="onEndCallback"
-                @update='onUpdateCallback'
-                @start="onStartCallback"
-                @add="onAddCallback"
-                @choose="onChooseCallback"
-                @filter="onFilterCallback"
-                @clone="onCloneCallback"
-                @scrollFn="scrollFn"
+                :options='{disabled:false,animation:200,ghostClass:"ghostClass",group:{ name: "card",put: ["column"]}}'
                 :move='onMoveCallback'
+                @end="onEndCallback"
+                @choose="onChooseCallback"
         >
 
-            <div v-for="element in card" :key="element.type" class="card">{{element.type}}</div>
+            <div v-for="element in card" :key="element.type" class="card" :id="888">
+                <p>count：{{element.count}}</p>
+                <p>{{element.type}}</p>
+            </div>
         </draggable>
 
     </div>
 
 
     <div class="column">
-        <draggable :options='{group:{ name: "column", put:["card"]}}' v-model="column">
-            <div v-for="element in column" class="card">{{element.type}}</div>
+        <draggable
+                :options='{group:{ name: "column", put:["card"]}}' v-model="column"
+                @choose="onChooseColumnCallback"
+                :move='onMoveCallback'
+        >
+            <div v-for="element in column" class="card" :key="element.type">
+                <p>count：{{element.count}}</p>
+                <p>{{element.type}}</p>
+            </div>
         </draggable>
     </div>
 
@@ -85,56 +90,127 @@
         data() {
             return {
                 //牌区
-                card: [
+                card_data: [
                     {
                         type: 1,
-                        img: ''
+                        img: '',
+                        count: 4,
                     },
                     {
                         type: 2,
-                        img: ''
+                        img: '',
+                        count: 4,
                     },
                     {
                         type: 3,
-                        img: ''
+                        img: '',
+                        count: 4,
                     }
                 ],
                 //每个列区
-                column: [
+                column_data: [
                     {
-                        type: 3,
-                        img: ''
+                        type: 4,
+                        img: '',
+                        count: 4,
                     }
-                ]
+                ],
+                block_data: {
+                    block: {},
+                    oldIndex: 0,
+                },
+                //牌区和列区,谁是0,代表先执行谁的set函数
+                priority: 0,
+                //判断是否属于在区域中左右拖动
+                is_area_drag: false,
             }
         },
         methods: {
             onMoveCallback(ent, originalEvent) {
-                console.log('在方块之间拖动', ent, originalEvent);
+                this.is_area_drag = true;
+                console.log('在方块之间拖动', ent.draggedContext.elements.id, originalEvent);
             },
             onUpdateCallback(ent, originalEvent) {
                 console.log('更换位置', ent, originalEvent);
             },
-            onStartCallback(ent, originalEvent) {
-                console.log('开始拖动', ent, originalEvent);
+            onStartCallback(ent) {
+                console.log('开始拖动', ent);
             },
-            onEndCallback(ent, originalEvent) {
-                console.log('拖动松手', ent, originalEvent);
-            },
-            onAddCallback() {
-                console.log('add回调');
+            onEndCallback(evt, originalEvent) {
+                console.log('拖动松手', evt, originalEvent);
+                console.log('拖动松手-原本位置', evt.oldIndex);
+                console.log('拖动松手-拖动后位置', evt.newIndex);
+                if (this.is_area_drag) {
+                    this.is_area_drag = false;
+                }
             },
             onChooseCallback(ent, originalEvent) {
+                this.block_data.block = this.card_data[ent.oldIndex];
+                this.block_data.oldIndex = ent.oldIndex;
                 console.log('选中方块', ent, originalEvent);
+                console.log('选中方块', this.card_data[ent.oldIndex]);
             },
-            onFilterCallback(ent, originalEvent) {
-                console.log('过滤器', ent, originalEvent);
+            onChooseColumnCallback(ent, originalEvent) {
+                this.block_data.block = this.column_data[ent.oldIndex];
+                this.block_data.oldIndex = ent.oldIndex;
+                console.log('选中方块', ent, originalEvent);
+                console.log('选中方块', this.column_data[ent.oldIndex]);
             },
-            onCloneCallback(ent, originalEvent) {
-                console.log('拷贝时', ent, originalEvent);
+        },
+        computed: {
+            card: {
+                get() {
+                    return this.card_data;
+                },
+                set(value) {
+                    if (this.is_area_drag === true) {
+                        this.card_data = value;
+                    } else {
+                        //表示从列中 拉取上来的
+                        if (this.priority == 0) {
+                            this.priority = 1;
+                            this.card_data = value;
+                            //对列区的数据进行操作
+                            this.block_data.block.count = this.block_data.block.count - 1;
+                            if (this.block_data.block.count > 0) {
+                                this.column_data[this.block_data.oldIndex] = this.block_data.block;
+                            } else {
+                                this.column_data.splice(this.column_data.oldIndex, 1);
+                            }
+                        } else {
+                            //表示从牌区中拉取下去的
+                            this.priority = 0;
+                        }
+                    }
+
+                }
             },
-            scrollFn(e) {
-                console.log(e)
+            column: {
+                get() {
+                    return this.column_data;
+                },
+                set(value) {
+                    if (this.is_area_drag === true) {
+                        console.log('yoyo');
+                        this.column_data = value;
+                    } else {
+                        //代表是从牌区拉下来的
+                        if (this.priority == 0) {
+                            this.priority = 1;
+                            this.column_data = value;
+                            //对牌区的数据进行操作
+                            this.block_data.block.count = this.block_data.block.count - 1;
+                            if (this.block_data.block.count > 0) {
+                                this.card_data[this.block_data.oldIndex] = this.block_data.block;
+                            } else {
+                                this.card_data.splice(this.block_data.oldIndex, 1);
+                            }
+                        } else {
+                            //代表是从列拉上去牌区的
+                            this.priority = 0;
+                        }
+                    }
+                }
             }
         }
     });
