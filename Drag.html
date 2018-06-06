@@ -55,12 +55,12 @@
         <draggable
                 v-model="card"
                 :options='{disabled:false,animation:200,ghostClass:"ghostClass",group:{ name: "card",put: ["column"]}}'
-                :move='onMoveCallback'
+                :move='onMoveCardCallback'
                 @end="onEndCallback"
                 @choose="onChooseCallback"
         >
 
-            <div v-for="element in card" :key="element.type" class="card" :id="888">
+            <div v-for="element in card" :key="element.type" class="card" data-type="card">
                 <p>count：{{element.count}}</p>
                 <p>{{element.type}}</p>
             </div>
@@ -73,9 +73,9 @@
         <draggable
                 :options='{group:{ name: "column", put:["card"]}}' v-model="column"
                 @choose="onChooseColumnCallback"
-                :move='onMoveCallback'
+                :move='onMoveColumnCallback'
         >
-            <div v-for="element in column" class="card" :key="element.type">
+            <div v-for="element in column" class="card" :key="element.type" data-type="column">
                 <p>count：{{element.count}}</p>
                 <p>{{element.type}}</p>
             </div>
@@ -115,8 +115,11 @@
                         count: 4,
                     }
                 ],
+                //临时选中的块数据
                 block_data: {
+                    //临时被选中的块
                     block: {},
+                    //当前被选中块的索引
                     oldIndex: 0,
                 },
                 //牌区和列区,谁是0,代表先执行谁的set函数
@@ -126,9 +129,15 @@
             }
         },
         methods: {
-            onMoveCallback(ent, originalEvent) {
-                this.is_area_drag = true;
-                console.log('在方块之间拖动', ent.draggedContext.elements.id, originalEvent);
+            onMoveCardCallback(ent) {
+                if (ent.related.dataset.type == 'card') {
+                    this.is_area_drag = true;
+                }
+            },
+            onMoveColumnCallback(ent) {
+                if (ent.related.dataset.type == 'column') {
+                    this.is_area_drag = true;
+                }
             },
             onUpdateCallback(ent, originalEvent) {
                 console.log('更换位置', ent, originalEvent);
@@ -163,12 +172,15 @@
                     return this.card_data;
                 },
                 set(value) {
+                    //所在区域左右拖动
                     if (this.is_area_drag === true) {
                         this.card_data = value;
                     } else {
                         //表示从列中 拉取上来的
                         if (this.priority == 0) {
                             this.priority = 1;
+                            //恢复到牌区的时候判断这张牌是否已经存在，如果存在的话直接加count。
+                            this.card_data.forEach()
                             this.card_data = value;
                             //对列区的数据进行操作
                             this.block_data.block.count = this.block_data.block.count - 1;
@@ -190,6 +202,7 @@
                     return this.column_data;
                 },
                 set(value) {
+                    //所在区域左右拖动
                     if (this.is_area_drag === true) {
                         console.log('yoyo');
                         this.column_data = value;
