@@ -10,6 +10,7 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/Vue.Draggable/2.16.0/vuedraggable.min.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
     <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 </head>
 
 
@@ -162,8 +163,8 @@
                     :value="item.value">
             </el-option>
         </el-select>
-        <el-input-number v-model="save_data.level"  label="等级"></el-input-number>
-        <el-input v-model="save_data.count" placeholder="赢牌场次"  style="width: 200px"></el-input>
+        <el-input-number v-model="save_data.level" label="等级"></el-input-number>
+        <el-input v-model="save_data.count" placeholder="赢牌场次" style="width: 200px"></el-input>
         <el-button @click="save">保存</el-button>
     </div>
 
@@ -248,23 +249,23 @@
                 column_options_pitch_on: 'column_options_pitch_on',
 
                 //类型数据
-                type_data:[
+                type_data: [
                     {
-                        value:'抓鸡',
-                        label:'抓鸡666',
+                        value: '抓鸡',
+                        label: '抓鸡666',
                     }
                 ],
                 //select选中type_data
-                save_data:{
-                    type:'',
-                    level:0,
-                    count:''
+                save_data: {
+                    type: '',
+                    level: 0,
+                    count: ''
                 }
             }
         },
         methods: {
             onMoveCardCallback(ent) {
-                console.log('onMoveCardCallback方块之间滑动',ent.related.dataset);
+                console.log('onMoveCardCallback方块之间滑动', ent.related.dataset);
                 //如果成立,代表是在自己区域中左右拖动来进行排序
                 //否则的话,就是拖动离开自己的区域
                 if (ent.related.dataset.type == 'card') {
@@ -274,7 +275,7 @@
                 }
             },
             onMoveColumnCallback(ent) {
-                console.log('onMoveColumnCallback方块之间滑动',ent.related.dataset);
+                console.log('onMoveColumnCallback方块之间滑动', ent.related.dataset);
                 //如果成立,代表是在自己区域中左右拖动来进行排序
                 //否则的话,就是拖动离开自己的区域
                 if (ent.related.dataset.type == 'column') {
@@ -287,13 +288,13 @@
                 // console.log('开始拖动', ent);
             },
             onCardEndCallback(evt) {
-                console.log('牌区拖动松手了--------------',this.is_area_drag);
+                console.log('牌区拖动松手了--------------', this.is_area_drag);
                 if (this.is_area_drag === true) {
                     this.is_area_drag = false;
                 }
             },
             onColumnEndCallback(evt) {
-                console.log('列区拖动松手了',this.is_area_drag);
+                console.log('列区拖动松手了', this.is_area_drag);
                 if (this.is_area_drag === true) {
                     this.is_area_drag = false;
                 }
@@ -315,12 +316,53 @@
                 this.block_data.oldIndex = ent.oldIndex;
             },
             onColumnOptionsCallback(key) {
-                console.log(key);
                 this.column_key = key;
                 this.pitch_on_class = key;
             },
+            //补全牌区或者列区的占位块
+            supplement(name) {
+                if (name == 'column_data') {
+                    if (this[name][this.column_key].length < 1) {
+                        this[name][this.column_key] = [{
+                            count: 0,
+                            type: -200,
+                            img: ''
+                        }];
+                    }
+                } else {
+                    if (this[name].length < 1) {
+                        this[name] = [{
+                            count: 0,
+                            type: -200,
+                            img: ''
+                        }];
+                    }
+                }
+            },
+            //移除牌区或者列区的占位块
+            removeSupplement(name) {
+                if (name =='column_data') {
+                    //查询列区是否有占位的块，有的话就去除掉
+                    let index = this.column_data[this.column_key].findIndex((value1, index, obj) => {
+                        return value1.type == -200;
+                    });
+                    if (index > -1) {
+                        this.column_data[this.column_key].splice(index, 1);
+                    }
+                } else {
+                    //查询牌区是否有占位的块，有的话就去除掉
+                    let index = this.card_data.findIndex((value1, index, obj) => {
+                        return value1.type == -200;
+                    });
+                    if (index > -1) {
+                        this.card_data.splice(index, 1);
+                    }
+                }
+            },
+            //保存
             save() {
-                for( x in this.save_data) {
+                this.supplement('column_data');
+                for (x in this.save_data) {
                     if (this.save_data[x] == 0 || this.save_data[x] == '') {
                         return this.$message({
                             message: '每个选项都要填写',
@@ -328,6 +370,7 @@
                         });
                     }
                 }
+                // $.post('http://localhost/hero_chicken_web_guizhou/public/index.php/demo',{save_data:this.save_data,column_data:this.column_data,a:[1,2,3]});
             }
         },
         computed: {
@@ -338,7 +381,7 @@
                 set(value) {
                     //所在区域左右拖动
                     if (this.is_area_drag === true) {
-                        console.log('牌区，在所在区域中左右滑动',value);
+                        console.log('牌区，在所在区域中左右滑动', value);
                         this.card_data = value;
                     } else {
                         //表示从列中 拉取上来的
@@ -370,13 +413,7 @@
                                 this.card_data = value;
                             }
 
-                            //查询牌区是否有占位的块，有的话就去除掉
-                            let index = this.card_data.findIndex((value1, index, obj) => {
-                                return value1.type == -200;
-                            });
-                            if (index > -1) {
-                                this.card_data.splice(index, 1);
-                            }
+                            this.removeSupplement('card_data');
 
                             //对列区的数据进行操作，拉上牌区后就删除列中的牌
                             this.column_data[this.column_key].splice(this.block_data.oldIndex, 1);
@@ -384,15 +421,7 @@
                         } else {
                             //表示从牌区中拉取下去的
                             this.priority = 0;
-
-                            //如果把牌区的牌都拉下去了，需要在牌区生成一个占位符
-                            if (this.card_data.length < 1) {
-                                this.card_data = [{
-                                    count: 0,
-                                    type: -200,
-                                    img: ''
-                                }];
-                            }
+                            this.supplement('card_data');
                         }
                     }
 
@@ -405,7 +434,7 @@
                 set(value) {
                     //所在区域左右拖动
                     if (this.is_area_drag === true) {
-                        console.log('列区，左右滑动',value);
+                        console.log('列区，左右滑动', value);
                         this.column_data[this.column_key] = value;
                     } else {
                         //代表是从牌区拉下来的
@@ -420,13 +449,7 @@
                                 return;
                             }
 
-                            //查询列区是否有占位的块，有的话就去除掉
-                            let index = this.column_data[this.column_key].findIndex((value1, index, obj) => {
-                                return value1.type == -200;
-                            });
-                            if (index > -1) {
-                                this.column_data[this.column_key].splice(index, 1);
-                            }
+                            this.removeSupplement('column_data');
 
                             //对牌区的数据进行操作
                             this.block_data.block.count = this.block_data.block.count - 1;
@@ -439,15 +462,7 @@
                         } else {
                             //代表是从列拉上去牌区的
                             this.priority = 0;
-
-                            //如果当前列全部把牌 拉上去了牌区的话，就需要把占位块弄回去
-                            if (this.column_data[this.column_key].length < 1) {
-                                this.column_data[this.column_key] = [{
-                                    count: 0,
-                                    type: -200,
-                                    img: ''
-                                }];
-                            }
+                            this.supplement('column_data');
                         }
                     }
                 }
